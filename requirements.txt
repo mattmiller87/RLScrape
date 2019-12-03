@@ -1,0 +1,10 @@
+bs4
+lxml
+requests
+csv
+datetime
+argparse
+os
+re
+asyncio
+aioify

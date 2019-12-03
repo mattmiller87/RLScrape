@@ -127,22 +127,22 @@ class csvIO:
 					if playlist in 'Ranked Duel 1v1' and pdata is not None and pdata.items():
 						newdict[season]['1'] = pdata['MMR']
 						newdict[season]['1GP'] = pdata['Games Played']
-						if int(latestseason) == int(season):
+						if (int(latestseason) == int(season)) and tiertf:
 							newdict[season]['1T'] = pdata['Tier']
 					if playlist in 'Ranked Doubles 2v2' and pdata is not None  and pdata.items():
 						newdict[season]['2'] = pdata['MMR']
 						newdict[season]['2GP'] = pdata['Games Played']
-						if int(latestseason) == int(season):
+						if (int(latestseason) == int(season)) and tiertf:
 							newdict[season]['2T'] = pdata['Tier']
 					if playlist in 'Ranked Solo Standard 3v3' and pdata is not None  and pdata.items():
 						newdict[season]['3S'] = pdata['MMR']
 						newdict[season]['3SGP'] = pdata['Games Played']
-						if int(latestseason) == int(season):
+						if (int(latestseason) == int(season)) and tiertf:
 							newdict[season]['3ST'] = pdata['Tier']
 					if playlist in 'Ranked Standard 3v3' and pdata is not None  and pdata.items():
 						newdict[season]['3'] = pdata['MMR']
 						newdict[season]['3GP'] = pdata['Games Played']
-						if int(latestseason) == int(season):
+						if (int(latestseason) == int(season)) and tiertf:
 							newdict[season]['3T'] = pdata['Tier']
 	
 		newlist = []

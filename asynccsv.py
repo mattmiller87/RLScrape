@@ -106,6 +106,7 @@ class csvIO:
 		'''Take json formatted dictionary of playerdata and create a list which is better formatted for csv
 		this is specifically designed for RSC'''
 		latestseason = self.latestseason
+		tiertf = self.tiertf
 		newdict = {}
 		for gamertag,gdata in dictdata.items():
 			for season,sdata in gdata.items():
@@ -119,22 +120,22 @@ class csvIO:
 					if playlist in 'Ranked Duel 1v1' and pdata is not None and pdata.items():
 						newdict[season]['1'] = pdata['MMR']
 						newdict[season]['1GP'] = pdata['Games Played']
-						if int(latestseason) == int(season):
+						if (int(latestseason) == int(season)) and tiertf:
 							newdict[season]['1T'] = pdata['Tier']
 					if playlist in 'Ranked Doubles 2v2' and pdata is not None  and pdata.items():
 						newdict[season]['2'] = pdata['MMR']
 						newdict[season]['2GP'] = pdata['Games Played']
-						if int(latestseason) == int(season):
+						if (int(latestseason) == int(season)) and tiertf:
 							newdict[season]['2T'] = pdata['Tier']
 					if playlist in 'Ranked Solo Standard 3v3' and pdata is not None  and pdata.items():
 						newdict[season]['3S'] = pdata['MMR']
 						newdict[season]['3SGP'] = pdata['Games Played']
-						if int(latestseason) == int(season):
+						if (int(latestseason) == int(season)) and tiertf:
 							newdict[season]['3ST'] = pdata['Tier']
 					if playlist in 'Ranked Standard 3v3' and pdata is not None  and pdata.items():
 						newdict[season]['3'] = pdata['MMR']
 						newdict[season]['3GP'] = pdata['Games Played']
-						if int(latestseason) == int(season):
+						if (int(latestseason) == int(season)) and tiertf:
 							newdict[season]['3T'] = pdata['Tier']
 	
 		newlist = []
@@ -153,7 +154,7 @@ def checkFolders():
 	if not os.path.exists("Scrapes"):
 		logger.info("Creating Scrapes folder...")
 		os.makedirs("Scrapes")
-		
+	
 async def singleRun():
 	logger.info("Start for csv input:%s" % (results.input))
 	inputoutput = csvIO() # initialize class

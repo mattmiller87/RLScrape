@@ -4,7 +4,5 @@ requests
 csv
 datetime
 argparse
-os
-re
 asyncio
 aioify

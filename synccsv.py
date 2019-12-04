@@ -34,7 +34,7 @@ class csvIO:
 
 	def readCSVGamertagPlatform(self):
 		'''read input CSV file.  File MUST be structured either: Gamertag,Platform || *kwargs,Gamertag,Platform'''
-		with open(self.csvinput, newline ='', encoding="ISO-8859-1") as csvread:
+		with open(self.csvinput, 'r', newline='', encoding='latin-1') as csvread:
 			reader = csv.reader(csvread)
 			i = 0
 			for row in reader:
@@ -104,7 +104,7 @@ class csvIO:
 			else:
 				self.header.extend(header_dict[k] for k in header_dict if k in self.playlists)
 
-		with open(self.csvoutput, 'w', newline='', encoding="UTF-8") as csvwrite:
+		with open(self.csvoutput, 'w', encoding='latin-1') as csvwrite:
 			w = csv.writer(csvwrite, delimiter=',')
 			w.writerow(self.header)
 			for newrow in self.newrows:

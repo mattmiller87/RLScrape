@@ -34,7 +34,7 @@ class csvIO:
 
 	def readCSVGamertagPlatform(self):
 		'''read input CSV file.  File MUST be structured either: Gamertag,Platform || *kwargs,Gamertag,Platform'''
-		with open(self.csvinput, newline ='', encoding="UTF-8") as csvread:
+		with open(self.csvinput, newline ='', encoding="ISO-8859-1") as csvread:
 			reader = csv.reader(csvread)
 			i = 0
 			for row in reader:
@@ -55,7 +55,7 @@ class csvIO:
 		scrape = Webscrape()
 		seasons = self.seasons
 
-		with open(self.csvinput, newline ='', encoding="UTF-8") as csvread:
+		with open(self.csvinput, newline ='', encoding="ISO-8859-1") as csvread:
 			reader = csv.reader(csvread)
 			i = 0
 			for row in reader:

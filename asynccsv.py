@@ -35,7 +35,7 @@ class csvIO:
 	def areadCSVLinks(self):
 		'''read input CSV file. File MUST be structured either: preferred = *kwargs,Name,Link || optional = *kwargs,Link'''
 		seasons = self.seasons
-		with open(self.csvinput, newline ='', encoding="UTF-8") as csvread:
+		with open(self.csvinput, newline ='', encoding="ISO-8859-1") as csvread:
 			reader = csv.reader(csvread)
 			playerdict = {} # define a basic dict to pass csv information into
 			i = 0
@@ -96,7 +96,7 @@ class csvIO:
 			else:
 				self.header.extend(header_dict[k] for k in header_dict if k in self.playlists)
 
-		with open(self.csvoutput, 'w', newline='', encoding="UTF-8") as csvwrite:
+		with open(self.csvoutput, 'w', newline='', encoding="ISO-8859-1") as csvwrite:
 			w = csv.writer(csvwrite, delimiter=',')
 			w.writerow(self.header)
 			for newrow in newrows:

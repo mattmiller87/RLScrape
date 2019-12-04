@@ -11,7 +11,7 @@ class Webscrape():
 	def __init__(self):
 		self.webpath = "https://rocketleague.tracker.network/profile"
 		self.webpathmmr = "https://rocketleague.tracker.network/profile/mmr"
-		self.latestseason = '12' #need a better way to update this, perhaps dynamically?
+		self.latestseason = '13' #need a better way to update this, perhaps dynamically?
 		self.rltrackermissing = "We could not find your stats,"
 		self.psyonixdisabled = "Psyonix has disabled the Rocket League API"
 

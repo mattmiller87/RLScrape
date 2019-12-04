@@ -23,7 +23,7 @@ class csvIO:
 		self.csvoutput = results.output
 		self.seasons = results.seasons
 		self.playlists = results.playlists
-		self.latestseason = '12' #need a better way to update this, perhaps dynamically?
+		self.latestseason = '13' #need a better way to update this, perhaps dynamically?
 		self.header = []
 		tierchoices = ['1T','2T','3ST','3T','All']
 		tiermatch = [item for item in tierchoices if item in self.playlists]

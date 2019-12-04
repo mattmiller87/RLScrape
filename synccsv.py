@@ -21,7 +21,7 @@ class csvIO:
 		self.csvoutput = results.output
 		self.seasons = results.seasons
 		self.playlists = results.playlists
-		self.latestseason = '12' #need a better way to update this, perhaps dynamically?
+		self.latestseason = '13' #need a better way to update this, perhaps dynamically?
 		self.header = []
 		self.rows = []
 		self.newrows = []

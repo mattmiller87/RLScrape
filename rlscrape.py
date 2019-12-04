@@ -13,6 +13,7 @@ class Webscrape():
 		self.webpathmmr = "https://rocketleague.tracker.network/profile/mmr"
 		self.latestseason = '12' #need a better way to update this, perhaps dynamically?
 		self.rltrackermissing = "We could not find your stats,"
+		self.psyonixdisabled = "Psyonix has disabled the Rocket League API"
 
 	def retrieveDataRLTracker(self,gamertag="memlo",platform="steam",seasons=["12"],tiertf=False):
 		'''Python BeautifulSoup4 Webscraper to https://rocketleague.tracker.network/ to retrieve gamer data'''
@@ -23,6 +24,7 @@ class Webscrape():
 		webpathmmr = self.webpathmmr
 		webpath = self.webpath
 		rltrackermissing = self.rltrackermissing
+		psyonixdisabled = self.psyonixdisabled
 		playerdata = {} # define the playerdata dict
 		playerdata[gamertag] = {} # define the gamertag dict
 		if '[]' in seasons:
@@ -31,7 +33,9 @@ class Webscrape():
 		if page.status_code == 200:
 			soup = BeautifulSoup(page.content, features="lxml")
 			if soup(text=re.compile(rltrackermissing)): # find "we could not find your stats" on webpage
-				logger.critical("URL:%(webpath)s/%(platform)s/%(gamertag)s" % locals())
+				logger.critical("Player Missing - URL:%(webpath)s/%(platform)s/%(gamertag)s" % locals())
+			elif soup(text=re.compile(psyonixdisabled)): # find "Psyonix has disabled the Rocket League API" on webpage
+				logger.critical("Psyonix Disabled API - URL:%(webpath)s/%(platform)s/%(gamertag)s" % locals())
 			else:
 				if latestseason in seasons:
 					playerdata[gamertag][latestseason] = {} #define the season dict

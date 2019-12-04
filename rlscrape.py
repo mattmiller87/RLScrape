@@ -11,7 +11,7 @@ class Webscrape():
 	def __init__(self):
 		self.webpath = "https://rocketleague.tracker.network/profile"
 		self.webpathmmr = "https://rocketleague.tracker.network/profile/mmr"
-		self.latestseason = '12' #need a better way to update this, perhaps dynamically?
+		self.latestseason = '13' #need a better way to update this, perhaps dynamically?
 		self.rltrackermissing = "We could not find your stats,"
 		self.psyonixdisabled = "Psyonix has disabled the Rocket League API"
 
@@ -158,7 +158,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Scrape Commandline Options', add_help=True)
 	parser.add_argument('-p', action='store', dest='platform', help='platform options. Example: steam', choices=('steam','ps4','xbox'), default='steam')
 	parser.add_argument('-g', action='store', dest='gamertag', help='your gamertag', default='memlo')
-	parser.add_argument('-s', action='store', dest='seasons', help='retrieve for season(s) defined. Example: 8 9 11', nargs='+', default=['12'])
+	parser.add_argument('-s', action='store', dest='seasons', help='retrieve for season(s) defined. Example: 8 9 11', nargs='+', default=['13']) #need a better way to update this, perhaps dynamically?
 	
 	results = parser.parse_args()
 	platform = results.platform

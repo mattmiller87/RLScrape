@@ -23,7 +23,7 @@ class csvIO:
 		self.csvoutput = results.output
 		self.seasons = results.seasons
 		self.playlists = results.playlists
-		self.latestseason = '12' #need a better way to update this, perhaps dynamically?
+		self.latestseason = '13' #need a better way to update this, perhaps dynamically?
 		self.header = []
 		tierchoices = ['1T','2T','3ST','3T','All']
 		tiermatch = [item for item in tierchoices if item in self.playlists]
@@ -176,7 +176,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Scrape Commandline Options', add_help=True)
 	parser.add_argument('-i', action='store', dest='input', help='Input CSV to use', default='example.csv')
 	parser.add_argument('-o', action='store', dest='output', help='Output CSV to use', default='Scrapes/%s_RLTN.csv' % (readibletime)) #RLTN = RocketLeague Tracker Network
-	parser.add_argument('-s', action='store', dest='seasons', help='retrieve for season(s) defined. Example: 8 9 11', nargs='+', default=['12'])
+	parser.add_argument('-s', action='store', dest='seasons', help='retrieve for season(s) defined. Example: 8 9 11', nargs='+', default=['13']) #need a better way to update this, perhaps dynamically?
 	parser.add_argument('-p', action='store', dest='playlists', help='playlist options. Example: 1 2 3S 3', choices=("1","2","3S","3","1GP","2GP","3SGP","3GP","1T","2T","3ST","3T","All"), nargs='+', default="All")
 	
 	results = parser.parse_args()

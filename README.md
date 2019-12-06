@@ -1,9 +1,29 @@
 # rocketleaguescripts
-I have been making this more modular.
 
-You can run rlscrape.py using arguments to pass gamertag and platform.
+main/main.py
+ - required arguments:
+   - gamertag
+   - platform
+ - optional arguments:
+   - season(s)
 
-Alternatively, if you have a csv, you can specify input,output csv - and choose youre module: synccsv.py or asynccsv.py (synchronous, asynchronous)
+As more options are designed for mass input/ouput, they will be added.
+CSV:
+ - asynccsv.py
+   - asynchronous I/O (fastest)
+   - in testing
+ - synccsv.py
+   - synchronous I/O
+   - has been reliable so far
+ - required arguments:
+   - input csv file
+ - optional arguments:
+   - output csv file 
+     - default is <datestamp>_RLTN.csv
+   - season(s)
+     - default is 13
+   - returndata - playlists, games played and tier
+     - defauls is All
 
 Not using arguments will result in Memlo's stats being returned
 

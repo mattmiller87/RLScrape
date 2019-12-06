@@ -114,6 +114,7 @@ class csvIO:
 		'''Take json formatted dictionary of playerdata and create a list which is better formatted for csv
 		this is specifically designed for RSC'''
 		latestseason = self.latestseason
+                tiertf = self.tiertf
 		newdict = {}
 		for gamertag,gdata in dictdata.items():
 			for season,sdata in gdata.items():

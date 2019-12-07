@@ -10,14 +10,14 @@ import logging
 class Log():
 	'''create logger which can be used anywhere'''
 	logger = None
-	def run(self):
+	def run(self,logfolder="logs"):
 		#Set up logging
-		if not os.path.exists("logs"):
-			os.makedirs("logs")
+		if not os.path.exists(logfolder):
+			os.makedirs(logfolder)
 		if None == self.logger:
 			self.logger = logging.getLogger('appLog')
 			self.logger.setLevel(logging.INFO)
-			handler = logging.FileHandler(filename = "logs/scrape.log")
+			handler = logging.FileHandler(filename = "%(logfolder)sscrape.log" % locals())
 			fmt = '%(levelname)s - %(asctime)s - %(funcName)s: %(message)s'
 			datefmt = '%Y-%m-%d %H:%M:%S'
 			formatter = logging.Formatter(fmt,datefmt)
@@ -27,7 +27,7 @@ class Log():
 
 class Webscrape():
 	'''classes are cool, no other real reason to use this - probably going to only have one function'''
-	logger = Log().run()
+	logger = Log().run(logfolder="../logs")
 	def __init__(self):
 		self.webpath = "https://rocketleague.tracker.network/profile"
 		self.webpathmmr = "https://rocketleague.tracker.network/profile/mmr"
@@ -188,7 +188,7 @@ if __name__ == "__main__":
 	platform = results.platform
 	gamertag = results.gamertag
 	seasons = results.seasons
-	logger = Log().run()
+	logger = Log().run("../logs")
 	singleRun(gamertag,platform,seasons)
 
 

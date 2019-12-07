@@ -9,7 +9,7 @@ import re
 
 from main.main import Log
 
-logger = Log().run()
+logger = Log().run(logfolder="logs")
 
 class rlCSV():
 	'''I/O for CSV'''

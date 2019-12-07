@@ -7,7 +7,7 @@ from tqdm import tqdm as pbar
 from main.main import Log,Webscrape
 from csvio.maincsv import rlCSV
 
-logger = Log().run()
+logger = Log().run(logfolder="logs")
 scrape = Webscrape()
 
 readibletime =  datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

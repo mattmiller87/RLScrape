@@ -8,6 +8,7 @@ from main.main import Log,Webscrape
 from csvio.maincsv import rlCSV
 
 logger = Log().run()
+scrape = Webscrape()
 
 readibletime =  datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
@@ -17,7 +18,6 @@ class synccsv:
 		platform = gamerdict['platform']
 		name = gamerdict['name']
 		link = gamerdict['link']
-		scrape = Webscrape()
 		seasons = csvIO.seasons
 		tiertf = csvIO.tiertf
 		newrow = []

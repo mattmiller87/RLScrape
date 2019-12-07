@@ -7,6 +7,10 @@ import csv
 import os
 import re
 
+from main.main import Log
+
+logger = Log().run()
+
 class rlCSV():
 	'''I/O for CSV'''
 	#class variables

@@ -11,6 +11,7 @@ from main.main import Log,Webscrape
 from csvio.maincsv import rlCSV
 
 logger = Log().run()
+scrape = Webscrape()
 
 readibletime =  datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") # used for csvWrite
 sem = asyncio.Semaphore(50) # control how many urls are being retrieved at a time
@@ -21,7 +22,7 @@ class asynccsv:
 		platform = gamerdict['platform']
 		name = gamerdict['name']
 		link = gamerdict['link']
-		scrape = Webscrape()
+		#scrape = Webscrape()
 		seasons = csvIO.seasons
 		tiertf = csvIO.tiertf
 		newrow = []

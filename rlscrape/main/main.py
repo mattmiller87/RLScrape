@@ -27,6 +27,7 @@ class Log():
 
 class Webscrape():
 	'''classes are cool, no other real reason to use this - probably going to only have one function'''
+	logger = Log().run()
 	def __init__(self):
 		self.webpath = "https://rocketleague.tracker.network/profile"
 		self.webpathmmr = "https://rocketleague.tracker.network/profile/mmr"
@@ -47,14 +48,14 @@ class Webscrape():
 		playerdata = {} # define the playerdata dict
 		playerdata[gamertag] = {} # define the gamertag dict
 		if '[]' in seasons:
-			logger.warning("Season was not set - you should never see this error")
+			self.logger.warning("Season was not set - you should never see this error")
 		page = requests.get("%(webpath)s/%(platform)s/%(gamertag)s" % locals())
 		if page.status_code == 200:
 			soup = BeautifulSoup(page.content, features="lxml")
 			if soup(text=re.compile(rltrackermissing)): # find "we could not find your stats" on webpage
-				logger.critical("Player Missing - URL:%(webpath)s/%(platform)s/%(gamertag)s" % locals())
+				self.logger.critical("Player Missing - URL:%(webpath)s/%(platform)s/%(gamertag)s" % locals())
 			elif soup(text=re.compile(psyonixdisabled)): # find "Psyonix has disabled the Rocket League API" on webpage
-				logger.critical("Psyonix Disabled API - URL:%(webpath)s/%(platform)s/%(gamertag)s" % locals())
+				self.logger.critical("Psyonix Disabled API - URL:%(webpath)s/%(platform)s/%(gamertag)s" % locals())
 			else:
 				if latestseason in seasons:
 					playerdata[gamertag][latestseason] = {} #define the season dict
@@ -78,7 +79,7 @@ class Webscrape():
 							try:
 								scripttags = soupmmr.findAll('script', type='text/javascript') #grab all <script> tags
 							except:
-								logger.error("Finding <script/> tags in website:%(webpathmmr)s/%(platform)s/%(gamertag)s" % locals())
+								self.logger.error("Finding <script/> tags in website:%(webpathmmr)s/%(platform)s/%(gamertag)s" % locals())
 							else:
 								scripttags = soupmmr.findAll('script', type='text/javascript') #grab all <script> tags
 								for script in scripttags: #find the data we care about
@@ -88,7 +89,7 @@ class Webscrape():
 										for blob in a[1:6]:
 											b = re.split('\w+.:',blob)
 											if '[]' in b[2] and 'Un-Ranked' not in b[2]: #if there aren't any dates listed, except in Un-Ranked
-												#logger.error("Issue for player:%s in season:%s with dates:%s and tier:%s in playlist:%s" % (gamertag,latestseason,b[2],b[4],b[1])) # using locals with dict[k] doesn't work :/
+												#logger.error("Issue for player:%s in season:%s with dates:%s and tier:%s in playlist:%s" % (gamertag,latestseason,b[2],b[4],b[1])) # this logs a ton
 												continue
 											else:
 												if 'Un-Ranked' in b[1]:
@@ -118,7 +119,8 @@ class Webscrape():
 							try:
 								seasontable = soup.find(id=seasonid).select('table > tbody')[0].select('tr')[1:]
 							except:
-								logger.error("Finding season:%(season)s data for gamertag:%(gamertag)s" % locals())
+								#self.logger.error("Finding season:%(season)s data for gamertag:%(gamertag)s" % locals()) # this can log a lot
+								continue
 							else:
 								seasontable = soup.find(id=seasonid).select('table > tbody')[0].select('tr')
 								playerdata[gamertag][season] #define the playlist dict
@@ -131,13 +133,12 @@ class Webscrape():
 									try:
 										blank1,playlist,blank2,writtenrank,mmr,gamesplayed = listdata
 									except ValueError:
-										logger.error("Error parsing:%(listdata)s season:%(season)s data for gamertag:%(gamertag)s" % locals())
+										self.logger.error("Error parsing:%(listdata)s season:%(season)s data for gamertag:%(gamertag)s" % locals())
 									else:
 										blank1,playlist,blank2,writtenrank,mmr,gamesplayed = listdata
 										playerdata[gamertag][season][playlist] = {} #define the playlist dict
 										playerdata[gamertag][season][playlist]['MMR'] = mmr
 										playerdata[gamertag][season][playlist]['Games Played'] = gamesplayed
-		#if self.playerdata.get(gamertag) != {}:
 		return playerdata
 
 	def _testSeason(self,season):
@@ -152,10 +153,10 @@ class Webscrape():
 			if int(season) == int(latestseason):
 				return False
 		except ValueError:
-			logger.error("Season:%(season)s was higher than Current Season:%(latestseason)s" % locals())
+			self.logger.error("Season:%(season)s was higher than Current Season:%(latestseason)s" % locals())
 			return False
 		except NameError:
-			logger.error("Season:%(season)s was not a number" % locals())
+			self.logger.error("Season:%(season)s was not a number" % locals())
 			return False
 		else:
 			return True
@@ -164,7 +165,6 @@ class Webscrape():
 def singleRun(gamertag,platform,seasons):
 	'''Single run of Webscrape.retrieveDataRLTracker'''
 	#define logging behavior
-	logger = Log().run()
 	logger.info("Start for gamertag:%(gamertag)s" % locals())
 	#run scrape
 	data = Webscrape().retrieveDataRLTracker(gamertag=gamertag,platform=platform,seasons=seasons,tiertf=True)
@@ -180,7 +180,7 @@ if __name__ == "__main__":
 
 	#Pass arguments for name and platform
 	parser = argparse.ArgumentParser(description='Scrape Commandline Options', add_help=True)
-	parser.add_argument('-p', action='store', dest='platform', help='platform options. Example: steam', choices=('steam','ps4','xbox'), default='steam')
+	parser.add_argument('-p', action='store', dest='platform', help='platform options. Example: steam', choices=('steam','ps','xbox'), default='steam')
 	parser.add_argument('-g', action='store', dest='gamertag', help='your gamertag', default='memlo')
 	parser.add_argument('-s', action='store', dest='seasons', help='retrieve for season(s) defined. Example: 8 9 11', nargs='+', default=['13']) #need a better way to update this, perhaps dynamically?
 	
@@ -188,7 +188,7 @@ if __name__ == "__main__":
 	platform = results.platform
 	gamertag = results.gamertag
 	seasons = results.seasons
-	
+	logger = Log().run()
 	singleRun(gamertag,platform,seasons)
 
 

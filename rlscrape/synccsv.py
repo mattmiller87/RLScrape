@@ -4,8 +4,8 @@ import requests
 import datetime
 import argparse
 from tqdm import tqdm as pbar
-from main.main import Log,Webscrape
-from csvio.maincsv import rlCSV
+from main import Log,Webscrape
+from maincsv import rlCSV
 
 logger = Log().run(logfolder="logs")
 scrape = Webscrape()
@@ -35,8 +35,10 @@ class synccsv:
 def singleRun():
 	logger.info("Start for csv input:%s"% (results.input))
 	pdict = csvIO.readCSVLinks() # read the csv file
+	responses = []
 	for k,v in pbar(pdict.items(),desc='retrieve',total=len(pdict.items())):
-		synccsv().retrieveData(k,v)
+		responses.append(synccsv().retrieveData(k,v))
+	csvIO.writeCSV(responses)
 	logger.info("Finish for csv output:%s"% (results.output))
 
 if __name__ == "__main__":

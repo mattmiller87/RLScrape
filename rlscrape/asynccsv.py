@@ -7,8 +7,8 @@ from tqdm import tqdm as pbar
 import asyncio
 from aioify import aioify
 #local imports
-from main.main import Log,Webscrape
-from csvio.maincsv import rlCSV
+from main import Log,Webscrape
+from maincsv import rlCSV
 
 logger = Log().run(logfolder="logs")
 scrape = Webscrape()
@@ -53,7 +53,7 @@ async def singleRun():
 	responses = []
 	for task in pbar(asyncio.as_completed(tasks),desc='retrieve',total=len(tasks)):
 		responses.append(await task)
-	await csvIO.writeCSV(responses)
+	csvIO.writeCSV(responses)
 	logger.info("Finish for csv output:%s" % (results.output))
 
 if __name__ == "__main__":

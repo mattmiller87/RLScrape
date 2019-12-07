@@ -148,11 +148,13 @@ class csvIO:
 							newdict[season]['3T'] = pdata['Tier']
 	
 		newlist = []
-		for season,v in newdict.items():
-			if "All" in self.playlists:
-				newlist.extend([v[k] for k in v])
-			else:
-				newlist.extend([v[k] for k in v if k in self.playlists])
+		for season in self.seasons:
+			for dictseason,v in newdict.items():
+				if season == dictseason:
+					if "All" in self.returndata:
+						newlist.extend([v[k] for k in v])
+					else:
+						newlist.extend([v[k] for k in v if k in self.returndata])
 		return newlist
 
 def checkFolders():

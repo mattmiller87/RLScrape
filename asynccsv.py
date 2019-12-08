@@ -82,7 +82,7 @@ class csvIO:
 		newrow.insert(a+1,link)
 		return newrow
 
-	async def awriteCSV(self,newrows):
+	def awriteCSV(self,newrows):
 		'''write list of data to outputCSV file'''
 		for season in self.seasons:
 			header_dict = {
@@ -96,7 +96,7 @@ class csvIO:
 			else:
 				self.header.extend(header_dict[k] for k in header_dict if k in self.playlists)
 
-		with open(self.csvoutput, 'w', encoding='latin-1') as csvwrite:
+		with open(self.csvoutput, 'w',newline='', encoding='latin-1') as csvwrite:
 			w = csv.writer(csvwrite, delimiter=',')
 			w.writerow(self.header)
 			for newrow in newrows:
@@ -167,7 +167,7 @@ async def singleRun():
 	responses = []
 	for task in pbar(asyncio.as_completed(tasks),desc='retrieve',total=len(tasks)):
 		responses.append(await task)
-	await inputoutput.awriteCSV(responses)
+	inputoutput.awriteCSV(responses)
 	logger.info("Finish for csv output:%s" % (results.output))
 
 if __name__ == "__main__":

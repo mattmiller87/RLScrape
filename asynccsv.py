@@ -141,10 +141,10 @@ class csvIO:
 		for season in self.seasons:
 			for dictseason,v in newdict.items():
 				if season == dictseason:
-					if "All" in self.returndata:
+					if "All" in self.playlists:
 						newlist.extend([v[k] for k in v])
 					else:
-						newlist.extend([v[k] for k in v if k in self.returndata])
+						newlist.extend([v[k] for k in v if k in self.playlists])
 		return newlist
 	
 	async def _safe_download(self,gamertag,platform):

@@ -37,25 +37,46 @@ class Webscrape():
 			elif soup(text=re.compile(psyonixdisabled)): # find "Psyonix has disabled the Rocket League API" on webpage
 				logger.critical("Psyonix Disabled API - URL:%(webpath)s/%(platform)s/%(gamertag)s" % locals())
 			else:
-				if latestseason in seasons:
-					playerdata[gamertag][latestseason] = {} #define the season dict
-					pagemmr = requests.get("%(webpathmmr)s/%(platform)s/%(gamertag)s" % locals())
-					if pagemmr.status_code == 200:
-						soupmmr = BeautifulSoup(pagemmr.content, features="lxml")
-						# for every playlist, create a record of data
-						# on the website, grab the 'div' for specific playlist
-						for numrank,playlist in playlistdict.items():
+				if '[]' not in seasons:
+					for season in seasons:
+						if self._testSeason(season):
+							playerdata[gamertag][season] = {} #define the season dict
+							seasonid = "season-%(season)s" % locals()
 							try:
-								soupmmr.find('a',{"data-id": numrank }).find('span').text
+								newseasontable = soup.find('div', id=seasonid).select('table > tbody', class_="card-table items")[-1].select('tr')
 							except:
-								playerdata[gamertag][latestseason][playlist] = None
+								logger.error("Finding season:%(season)s data for gamertag:%(gamertag)s" % locals())
 							else:
-								playerdata[gamertag][latestseason][playlist] = {} #define the playlist dict
-								playerdata[gamertag][latestseason][playlist]['MMR'] = soupmmr.find('a',{"data-id": numrank }).find('span').text
-								playerdata[gamertag][latestseason][playlist]['Games Played'] = soupmmr.find('div',{"data-id": numrank }).find('div').find('span').text
-								playerdata[gamertag][latestseason][playlist]['Rank'] = soupmmr.find('div',{"data-id": numrank }).select('div > span')[2].text  
-								playerdata[gamertag][latestseason][playlist]['Rank Division'] = soupmmr.find('div',{"data-id": numrank }).select('div > h4')[2].text
-						if tiertf == True:
+								for newtabledata in newseasontable:
+									listdata = []
+									td = newtabledata.find_all('td')[1:]
+									for i,x in enumerate(td):
+										if i == 0:
+											playlist = x.text.strip().split('\n')[0]
+											listdata.append(playlist)
+										else:
+											data = (x.text.strip().split('\n'))[0]
+											listdata.append(data)
+									if int(season) == int(latestseason):
+										playlist,divdown,mmr,divup,gamesplayed = listdata
+										if mmr == "n/a":
+											mmr = 0
+										if gamesplayed == "n/a":
+											gamesplayed = 0
+										if type(mmr) == str:
+											mmr = int(mmr.replace(",",""))
+										if type(gamesplayed) == str:
+											gamesplayed = int(gamesplayed.replace(",",""))
+									else:
+										playlist,mmr,gamesplayed = listdata
+									playerdata[gamertag][season][playlist] = {} # define the playlist dict
+									playerdata[gamertag][season][playlist]['MMR'] = mmr
+									playerdata[gamertag][season][playlist]['Games Played'] = gamesplayed
+				if tiertf == True:
+					if latestseason in seasons:
+						pagemmr = requests.get("%(webpathmmr)s/%(platform)s/%(gamertag)s" % locals())
+						if pagemmr.status_code == 200:
+							soupmmr = BeautifulSoup(pagemmr.content, features="lxml")
 							try:
 								scripttags = soupmmr.findAll('script', type='text/javascript') #grab all <script> tags
 							except:
@@ -68,57 +89,33 @@ class Webscrape():
 										data = {}
 										for blob in a[1:6]:
 											b = re.split('\w+.:',blob)
-											if '[]' in b[2] and 'Un-Ranked' not in b[2]: #if there aren't any dates listed, except in Un-Ranked
-												#logger.error("Issue for player:%s in season:%s with dates:%s and tier:%s in playlist:%s" % (gamertag,latestseason,b[2],b[4],b[1])) # using locals with dict[k] doesn't work :/
-												continue
+											if 'Un-Ranked' in b[1]:
+												playlist = 'Un-Ranked'
+											elif 'RankedDuel1v1' in b[1]:
+												playlist = 'Ranked Duel 1v1'
+											elif 'RankedDoubles2v2' in b[1]:
+												playlist = 'Ranked Doubles 2v2'
+											elif 'RankedSoloStandard3v3' in b[1]:
+												playlist = 'Ranked Solo Standard 3v3'
+											elif 'RankedStandard3v3' in b[1]:
+												playlist = 'Ranked Standard 3v3'
 											else:
-												if 'Un-Ranked' in b[1]:
-													playlist = 'Un-Ranked'
-												elif 'RankedDuel1v1' in b[1]:
-													playlist = 'Ranked Duel 1v1'
-												elif 'RankedDoubles2v2' in b[1]:
-													playlist = 'Ranked Doubles 2v2'
-												elif 'RankedSoloStandard3v3' in b[1]:
-													playlist = 'Ranked Solo Standard 3v3'
-												elif 'RankedStandard3v3' in b[1]:
-													playlist = 'Ranked Standard 3v3'
-												else:
-													playlist = ''
-												#dates = list(filter(None, re.split('\[|,|\]|\'',b[2]))) #futureproof
-												#rating_over_time' = list(filter(None, re.split('\[|,|\]',b[3]))) #futureproof
-												tier_over_time = list(filter(None, re.split('\[|,|\]|\}',b[4])))
-												if tier_over_time is not None:
-													playerdata[gamertag][latestseason][playlist]['Tier'] = tier_over_time[-1]
-												else:
+												playlist = ''
+											try:
+												playerdata[gamertag][latestseason][playlist]
+											except:
+												playerdata[gamertag][latestseason][playlist] = {}
+											else:
+												if '[]' in b[2]:
 													playerdata[gamertag][latestseason][playlist]['Tier'] = None
-				if '[]' not in seasons:
-					for season in seasons:
-						if self._testSeason(season):
-							playerdata[gamertag][season] = {} #define the season dict
-							seasonid = "season-%(season)s" % locals()
-							try:
-								seasontable = soup.find(id=seasonid).select('table > tbody')[0].select('tr')[1:]
-							except:
-								logger.error("Finding season:%(season)s data for gamertag:%(gamertag)s" % locals())
-							else:
-								seasontable = soup.find(id=seasonid).select('table > tbody')[0].select('tr')
-								playerdata[gamertag][season] #define the playlist dict
-								for tabledata in seasontable:
-									td = tabledata.find_all('td')
-									listdata = []
-									for x in td:
-										data = x.text.strip().split('\n')
-										listdata = listdata+data
-									try:
-										blank1,playlist,blank2,writtenrank,mmr,gamesplayed = listdata
-									except ValueError:
-										logger.error("Error parsing:%(listdata)s season:%(season)s data for gamertag:%(gamertag)s" % locals())
-									else:
-										blank1,playlist,blank2,writtenrank,mmr,gamesplayed = listdata
-										playerdata[gamertag][season][playlist] = {} #define the playlist dict
-										playerdata[gamertag][season][playlist]['MMR'] = mmr
-										playerdata[gamertag][season][playlist]['Games Played'] = gamesplayed
-		#if self.playerdata.get(gamertag) != {}:
+												else:
+													#dates = list(filter(None, re.split('\[|,|\]|\'',b[2]))) #futureproof
+													#rating_over_time' = list(filter(None, re.split('\[|,|\]',b[3]))) #futureproof
+													tier_over_time = list(filter(None, re.split('\[|,|\]|\}',b[4])))
+													if tier_over_time is not None:
+														playerdata[gamertag][latestseason][playlist]['Tier'] = tier_over_time[-1]
+													else:
+														playerdata[gamertag][latestseason][playlist]['Tier'] = None
 		return playerdata
 
 	def _testSeason(self,season):
@@ -130,8 +127,6 @@ class Webscrape():
 				raise NameError
 			if int(season) > int(latestseason):
 				raise ValueError
-			if int(season) == int(latestseason):
-				return False
 		except ValueError:
 			logger.error("Season:%(season)s was higher than Current Season:%(latestseason)s" % locals())
 			return False

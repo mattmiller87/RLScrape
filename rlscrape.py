@@ -28,7 +28,7 @@ class Webscrape():
 		playerdata = {} # define the playerdata dict
 		playerdata[gamertag] = {} # define the gamertag dict
 		if '[]' in seasons:
-			logger.warning("Season was not set - you should never see this error")
+			logger.critical("Season was not set - you should never see this error")
 		page = requests.get("%(webpath)s/%(platform)s/%(gamertag)s" % locals())
 		if page.status_code == 200:
 			soup = BeautifulSoup(page.content, features="lxml")
@@ -80,7 +80,7 @@ class Webscrape():
 							try:
 								scripttags = soupmmr.findAll('script', type='text/javascript') #grab all <script> tags
 							except:
-								logger.error("Finding <script/> tags in website:%(webpathmmr)s/%(platform)s/%(gamertag)s" % locals())
+								logger.error("Finding <script> tags in website:%(webpathmmr)s/%(platform)s/%(gamertag)s" % locals())
 							else:
 								scripttags = soupmmr.findAll('script', type='text/javascript') #grab all <script> tags
 								for script in scripttags: #find the data we care about
@@ -116,11 +116,14 @@ class Webscrape():
 														playerdata[gamertag][latestseason][playlist]['Tier'] = tier_over_time[-1]
 													else:
 														playerdata[gamertag][latestseason][playlist]['Tier'] = None
+		if '{}' in playerdata[gamertag]: #condition to alert if gamertag retrieval was blank
+			logger.debug("Gamertag: %(gamertag)s had no data to retrieve" % locals())
+		logger.debug("Data retrieval complete for gamertag: %(gamertag)s" % locals()) # a simple measure to make sure we catch every player when a list is ran
 		return playerdata
 
 	def _testSeason(self,season):
 		'''True/False to see if season is valid
-		1) is a number, 2) is a valid season less than current number, 3) if current season in list, just pass'''
+		1) is a number and is a valid season less than current number'''
 		latestseason = self.latestseason
 		try:
 			if not season.isdigit():

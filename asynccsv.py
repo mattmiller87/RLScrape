@@ -62,7 +62,6 @@ class csvIO:
 					playerdict[i][gamertag]['name'] = name
 					playerdict[i][gamertag]['link'] = link
 					i += 1
-		print(len(playerdict.items()))
 		return playerdict
 
 	async def aRetrieveData(self,gamertag,gamerdict):

@@ -40,6 +40,7 @@ class csvIO:
 			playerdict = {} # define a basic dict to pass csv information into
 			i = 0
 			for row in reader:
+				playerdict[i] = {}
 				if i < 1: # define headers
 					self.header = [str(i+1) for i in range(len(row))] # handle kwargs as header - assign number
 					self.header[-2] = "Name"
@@ -51,16 +52,17 @@ class csvIO:
 				except IndexError:
 					logger.error("Gamertag:%(name)s Link:%(link)s is not formatted properly" % locals())
 				else:
-					playerdict[gamertag] = {} # define dict for each gamertag and values for that gamertag
+					playerdict[i][gamertag] = {} # define dict for each gamertag and values for that gamertag
 					a = 0
 					for item in row:  # handle kwargs
 						if len(row) - a > 2:
-							playerdict[gamertag][a] = item
+							playerdict[i][gamertag][a] = item
 							a += 1
-					playerdict[gamertag]['platform'] = platform
-					playerdict[gamertag]['name'] = name
-					playerdict[gamertag]['link'] = link
+					playerdict[i][gamertag]['platform'] = platform
+					playerdict[i][gamertag]['name'] = name
+					playerdict[i][gamertag]['link'] = link
 					i += 1
+		print(len(playerdict.items()))
 		return playerdict
 
 	async def aRetrieveData(self,gamertag,gamerdict):
@@ -159,11 +161,12 @@ def checkFolders():
 async def singleRun():
 	logger.info("Start for csv input:%s" % (results.input))
 	inputoutput = csvIO() # initialize class
-	pdict = inputoutput.areadCSVLinks() # read the csv file
+	datadict = inputoutput.areadCSVLinks() # read the csv file
 	tasks = []
-	for k,v in pdict.items():
-		task = loop.create_task(inputoutput._safe_download(k,v)) # start the retrieve process
-		tasks.append(task)
+	for i,idict in datadict.items():
+		for k,v in idict.items():
+			task = loop.create_task(inputoutput._safe_download(k,v)) # start the retrieve process
+			tasks.append(task)
 	responses = []
 	for task in pbar(asyncio.as_completed(tasks),desc='retrieve',total=len(tasks)):
 		responses.append(await task)

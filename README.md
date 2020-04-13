@@ -3,7 +3,7 @@ I have been making this more modular.
 
 You can run rlscrape.py using arguments to pass gamertag and platform.
 
-Alternatively, if you have a csv, you can specify input,output csv - and choose youre module: synccsv.py or asynccsv.py (synchronous, asynchronous)
+Alternatively, if you have a csv, you can specify input,output csv - and choose youre module: asynccsv.py ( asynchronous)
 
 Not using arguments will result in Memlo's stats being returned
 

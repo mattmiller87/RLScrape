@@ -1,7 +1,6 @@
 bs4
 lxml
 requests
-csv
 datetime
 argparse
 asyncio

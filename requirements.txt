@@ -5,3 +5,4 @@ datetime
 argparse
 asyncio
 aioify
+tqdm

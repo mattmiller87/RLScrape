@@ -123,17 +123,17 @@ class csvIO:
 						newdict[season]['1GP'] = pdata['Games Played']
 						if (int(latestseason) == int(season)) and tiertf:
 							newdict[season]['1T'] = pdata['Tier']
-					if playlist in 'Ranked Doubles 2v2' and pdata is not None  and pdata.items():
+					if playlist in 'Ranked Doubles 2v2' and pdata is not None and pdata.items():
 						newdict[season]['2'] = pdata['MMR']
 						newdict[season]['2GP'] = pdata['Games Played']
 						if (int(latestseason) == int(season)) and tiertf:
 							newdict[season]['2T'] = pdata['Tier']
-					if playlist in 'Ranked Solo Standard 3v3' and pdata is not None  and pdata.items():
+					if playlist in 'Ranked Solo Standard 3v3' and pdata is not None and pdata.items():
 						newdict[season]['3S'] = pdata['MMR']
 						newdict[season]['3SGP'] = pdata['Games Played']
 						if (int(latestseason) == int(season)) and tiertf:
 							newdict[season]['3ST'] = pdata['Tier']
-					if playlist in 'Ranked Standard 3v3' and pdata is not None  and pdata.items():
+					if playlist in 'Ranked Standard 3v3' and pdata is not None and pdata.items():
 						newdict[season]['3'] = pdata['MMR']
 						newdict[season]['3GP'] = pdata['Games Played']
 						if (int(latestseason) == int(season)) and tiertf:
@@ -180,7 +180,7 @@ if __name__ == "__main__":
 	parser.add_argument('-i', action='store', dest='input', help='Input CSV to use', default='example.csv')
 	parser.add_argument('-o', action='store', dest='output', help='Output CSV to use', default='Scrapes/%s_RLTN.csv' % (readibletime)) #RLTN = RocketLeague Tracker Network
 	parser.add_argument('-s', action='store', dest='seasons', help='retrieve for season(s) defined. Example: 8 9 11', nargs='+', default=['14']) #need a better way to update this, perhaps dynamically?
-	parser.add_argument('-p', action='store', dest='playlists', help='playlist options. Example: 1 2 3S 3', choices=("1","2","3S","3","1GP","2GP","3SGP","3GP","1T","2T","3ST","3T","All"), nargs='+', default="All")
+	parser.add_argument('-p', action='store', dest='playlists', help='playlist options. Example: 1 2 3S 3', choices=("1","2","3S","3","1GP","2GP","3SGP","3GP","1T","2T","3ST","3T","All"), nargs='+', default="['1','1GP','2','2GP','3S','3SGP','3','3GP']")
 	
 	results = parser.parse_args()
 	#tierlegend =    {1:"Bronze I", 2:"Bronze II",3:"Bronze III",4:"Silver I",5:"Silver II",6:"Silver III",

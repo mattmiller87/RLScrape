@@ -5,11 +5,16 @@ import argparse
 import requests
 import re
 from setup_logging import logger
+import aiohttp
+import asyncio
+
 
 class Webscrape():
 	'''classes are cool, no other real reason to use this - probably going to only have one function'''
 	def __init__(self):
-		self.webpath = "https://rocketleague.tracker.network/profile"
+		self.webpath = "https://rocketleague-beta.tracker.network/rocket-league/profile"
+		#				https://rocketleague-beta.tracker.network/rocket-league/profile/steam/76561198049122040/overview
+		# self.webpath = "https://rocketleague.tracker.network/profile"
 		self.webpathmmr = "https://rocketleague.tracker.network/profile/mmr"
 		self.latestseason = '14' #need a better way to update this, perhaps dynamically?
 		self.rltrackermissing = "We could not find your stats,"
@@ -138,12 +143,37 @@ class Webscrape():
 			return False
 		else:
 			return True
-					
-def singleRun(gamertag,platform,seasons):
+
+	async def fetch(self, session, url):
+		async with session.get(url) as response:
+			return await response.text()
+
+	async def retrieveDataRLTracker_beta(self,gamertag="memlo",platform="steam",seasons=["12"],tiertf=False):
+		'''RLTracker is updating to a beta website with javascript loading the player data'''
+		latestseason = self.latestseason
+		webpathmmr = self.webpathmmr
+		webpath = self.webpath
+		rltrackermissing = self.rltrackermissing
+		psyonixdisabled = self.psyonixdisabled
+		playerdata = {} # define the playerdata dict
+		playerdata[gamertag] = {} # define the gamertag dict
+		if '[]' in seasons:
+			logger.critical("Season was not set - you should never see this error")
+		page = requests.get("%(webpath)s/%(platform)s/%(gamertag)s" % locals())
+		if page.status_code == 200:
+			async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=10,ssl=False)) as session:
+			#async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
+				url = ("%(webpath)s/%(platform)s/%(gamertag)s" % locals())
+				html = await self.fetch(session, "https://rocketleague-beta.tracker.network/rocket-league/profile/steam/76561198049122040")
+				soup = BeautifulSoup(html, "lxml")
+				title = soup.find('title')
+				print(soup)
+
+async def _singleRun(gamertag,platform,seasons):
 	'''Single run of Webscrape.retrieveDataRLTracker'''
 	logger.info("Start for gamertag:%(gamertag)s"% locals())
 	scrape = Webscrape()
-	data = scrape.retrieveDataRLTracker(gamertag=gamertag,platform=platform,seasons=seasons,tiertf=True)
+	data = await scrape.retrieveDataRLTracker_beta(gamertag=gamertag,platform=platform,seasons=seasons,tiertf=True)
 	if data is not None:
 		pprint(data)
 		logger.info("Finish for gamertag:%(gamertag)s"% locals())
@@ -163,7 +193,9 @@ if __name__ == "__main__":
 	gamertag = results.gamertag
 	seasons = results.seasons
 	
-	singleRun(gamertag,platform,seasons)
+	loop = asyncio.get_event_loop()
+	loop.run_until_complete(_singleRun(gamertag,platform,seasons))
+	loop.close()
 
 '''Idea
 class Gamer(object):

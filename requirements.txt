@@ -6,3 +6,4 @@ argparse
 asyncio
 aioify
 tqdm
+urllib3<1.25

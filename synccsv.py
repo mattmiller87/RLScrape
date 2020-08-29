@@ -27,7 +27,7 @@ class csvIO:
 		self.latestseason = '14' # need a better way to update this, perhaps dynamically?
 		self.header = []
 
-	def areadCSVLinks(self):
+	def readCSVLinks(self):
 		''' Read input CSV file. File MUST be structured either: preferred = *kwargs,Name,Link || optional = *kwargs,Link
 		'''
 		seasons = self.seasons
@@ -64,15 +64,14 @@ class csvIO:
 					i += 1
 		return playerdict
 
-	async def aRetrieveData(self,gamertag,gamerdict):
+	def RetrieveData(self,gamertag,gamerdict):
 		platform = gamerdict['platform']
 		name = gamerdict['name']
 		link = gamerdict['link']
 		scrape = Webscrape()
 		seasons = self.seasons
 		newrow = []
-		aioretrieve = aioify(obj=scrape.retrieveDataRLTracker, name='aioretrieve')
-		data = await aioretrieve(gamertag=gamertag,platform=platform,seasons=seasons)
+		data = scrape.retrieveDataRLTracker(gamertag=gamertag,platform=platform,seasons=seasons)
 		newrow = self._dictToList(data)
 		a = 0
 		for k,v in gamerdict.items(): # handle kwargs
@@ -83,7 +82,7 @@ class csvIO:
 		newrow.insert(a+1,link)
 		return newrow
 
-	def awriteCSV(self,newrows):
+	def writeCSV(self,newrows):
 		''' Write list of data to outputCSV file
 		'''
 		for season in self.seasons:
@@ -139,31 +138,30 @@ class csvIO:
 					else:
 						newlist.extend([v[k] for k in v if k in self.playlists])
 		return newlist
-	
-	async def _safe_download(self,gamertag,platform):
-		async with sem: # only allow so many retrieve requests at a time - helps with progress bar too
-			return await self.aRetrieveData(gamertag,platform)
 
 def checkFolders():
 	if not os.path.exists("Scrapes"):
 		logger.info("Creating Scrapes folder...")
 		os.makedirs("Scrapes")
 	
-async def singleRun():
+def singleRun():
 	logger.info("Start for csv input:%s" % (results.input))
 	inputoutput = csvIO() # initialize class
-	datadict = inputoutput.areadCSVLinks() # read the csv file
+	datadict = inputoutput.readCSVLinks() # read the csv file
 	tasks = []
 	for i,idict in datadict.items():
 		for k,v in idict.items():
-			task = loop.create_task(inputoutput._safe_download(k,v)) # start the retrieve process
+			task = inputoutput.RetrieveData(k,v) # start the retrieve process
 			tasks.append(task)
+	'''
 	responses = []
-	for task in pbar(asyncio.as_completed(tasks),desc='retrieve',total=len(tasks)):
-		responses.append(await task)
-	inputoutput.awriteCSV(responses)
+	for task in pbar(tasks,desc='retrieve',total=len(tasks)):
+		responses.append(task)
+	inputoutput.writeCSV(responses)
+	'''
+	inputoutput.writeCSV(tasks)
 	logger.info("Finish for csv output:%s" % (results.output))
-
+	
 if __name__ == "__main__":
 	''' Run locally to this script'''
 	# Use comandline arguments for input
@@ -179,6 +177,4 @@ if __name__ == "__main__":
 	#				7:"Gold I",8:"Gold II",9:"Gold III",10:"Platinum I",11:"Platinum II",12:"Platinum III",
 	#				13:"Diamond I",14:"Diamond II",15:"Diamond III",16:"Champion I",17:"Champion II",18:"Champion III",19:"Grand Champion"} #futureproof
 	
-	loop = asyncio.get_event_loop()
-	loop.run_until_complete(singleRun())
-	loop.close()
+	singleRun()

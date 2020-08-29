@@ -1,124 +1,119 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.8.5
 
 from bs4 import BeautifulSoup
 import argparse
 import requests
 import re
+import os
+import sys
 from setup_logging import logger
+'''
+from PyQt5.QtWebEngineWidgets import QWebEnginePage
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import QUrl
+'''
+from PyQt5 import QtCore, QtWidgets, QtWebEngineWidgets
+from contextlib import contextmanager
+from multiprocessing import Pool
 
+def _render(url):
+    class WebPage(QtWebEngineWidgets.QWebEnginePage):
+        def __init__(self):
+            super(WebPage, self).__init__()
+            self.loadFinished.connect(self.handleLoadFinished)
+            self.html = None
+
+        def start(self, url):
+            self._url = url
+            self.load(QtCore.QUrl(url))
+            while self.html is None:
+                QtWidgets.qApp.processEvents(
+                QtCore.QEventLoop.ExcludeUserInputEvents |
+                QtCore.QEventLoop.ExcludeSocketNotifiers |
+                QtCore.QEventLoop.WaitForMoreEvents)
+            QtWidgets.qApp.quit()
+
+        def processCurrentPage(self, data):
+            url = self.url().toString()
+            self.html = data
+
+        def handleLoadFinished(self):
+            self.toHtml(self.processCurrentPage)
+
+'''
+class Page(QWebEnginePage):
+    def __init__(self, url):
+        self.app = QApplication(sys.argv)
+        QWebEnginePage.__init__(self)
+        self.html = ''
+        self.loadFinished.connect(self._on_load_finished)
+        self.load(QUrl(url))
+        self.app.exec_()
+
+    def _on_load_finished(self):
+        self.html = self.toHtml(self.Callable)
+        self.content = '200'
+
+    def Callable(self, html_str):
+        self.html = html_str
+        self.app.quit()
+'''
 class Webscrape():
-	'''classes are cool, no other real reason to use this - probably going to only have one function'''
+	''' Define the details behind the webpage
+	'''
 	def __init__(self):
-		self.webpath = "https://rocketleague.tracker.network/profile"
-		self.webpathmmr = "https://rocketleague.tracker.network/profile/mmr"
+		self.webpath = "https://rocketleague.tracker.network/rocket-league/profile"
+		#self.webpathmmr = "https://rocketleague.tracker.network/profile/mmr"
 		self.latestseason = '14' #need a better way to update this, perhaps dynamically?
 		self.rltrackermissing = "We could not find your stats,"
 		self.psyonixdisabled = "Psyonix has disabled the Rocket League API"
 
-	def retrieveDataRLTracker(self,gamertag="memlo",platform="steam",seasons=["12"],tiertf=False):
-		'''Python BeautifulSoup4 Webscraper to https://rocketleague.tracker.network/ to retrieve gamer data'''
-		playlistdict = {0:'Un-Ranked',10:'Ranked Duel 1v1', 11:'Ranked Doubles 2v2',
-				12:'Ranked Solo Standard 3v3',13:'Ranked Standard 3v3',
-				27:'Hoops',28:'Rumble',29:'Dropshot',30:'Snowday'} 
+	def retrieveDataRLTracker(self,gamertag="76561198049122040",platform="steam",seasons=["14"]):
+		''' Python BeautifulSoup4 Webscraper to https://rocketleague.tracker.network/ to retrieve gamer data
+			gamertag 76561198049122040 = memlo steam id
+			platform options are xbl, psn, steam
+			returns a dictionary for the gamertag with playlist, mmr, gamesplayed, and rank
+		'''
 		latestseason = self.latestseason
-		webpathmmr = self.webpathmmr
+		#webpathmmr = self.webpathmmr
 		webpath = self.webpath
+		playerwebpath = "%(webpath)s/%(platform)s/%(gamertag)s/overview" % locals()
 		rltrackermissing = self.rltrackermissing
 		psyonixdisabled = self.psyonixdisabled
 		playerdata = {} # define the playerdata dict
 		playerdata[gamertag] = {} # define the gamertag dict
 		if '[]' in seasons:
 			logger.critical("Season was not set - you should never see this error")
-		page = requests.get("%(webpath)s/%(platform)s/%(gamertag)s" % locals())
-		if page.status_code == 200:
-			soup = BeautifulSoup(page.content, features="lxml")
-			if soup(text=re.compile(rltrackermissing)): # find "we could not find your stats" on webpage
-				logger.critical("Player Missing - URL:%(webpath)s/%(platform)s/%(gamertag)s" % locals())
-			elif soup(text=re.compile(psyonixdisabled)): # find "Psyonix has disabled the Rocket League API" on webpage
-				logger.critical("Psyonix Disabled API - URL:%(webpath)s/%(platform)s/%(gamertag)s" % locals())
+		#page = Page(playerwebpath)
+		app = QtWidgets.QApplication(sys.argv)
+		page = _render(playerwebpath)
+		if page:
+		#if page.content == '200':
+			#soup = BeautifulSoup(page.html, 'html.parser')
+			soup = BeautifulSoup(page, 'html.parser')
+
+			if soup.find('div', class_='error-message'):
+				logger.error(soup.find('div', class_='error-message').text)
 			else:
-				if '[]' not in seasons:
-					for season in seasons:
-						if self._testSeason(season):
-							playerdata[gamertag][season] = {} #define the season dict
-							seasonid = "season-%(season)s" % locals()
-							try:
-								newseasontable = soup.find('div', id=seasonid).select('table > tbody', class_="card-table items")[-1].select('tr')
-							except:
-								logger.error("Finding season:%(season)s data for gamertag:%(gamertag)s" % locals())
-							else:
-								for newtabledata in newseasontable:
-									listdata = []
-									td = newtabledata.find_all('td')[1:]
-									for i,x in enumerate(td):
-										if i == 0:
-											playlist = x.text.strip().split('\n')[0]
-											listdata.append(playlist)
-										else:
-											data = (x.text.strip().split('\n'))[0]
-											listdata.append(data)
-									if int(season) == int(latestseason):
-										playlist,divdown,mmr,divup,gamesplayed = listdata
-										if mmr == "n/a":
-											mmr = 0
-										if gamesplayed == "n/a":
-											gamesplayed = 0
-										if type(mmr) == str:
-											mmr = int(mmr.replace(",",""))
-										if type(gamesplayed) == str:
-											gamesplayed = int(gamesplayed.replace(",",""))
-									else:
-										playlist,mmr,gamesplayed = listdata
-									playerdata[gamertag][season][playlist] = {} # define the playlist dict
-									playerdata[gamertag][season][playlist]['MMR'] = mmr
-									playerdata[gamertag][season][playlist]['Games Played'] = gamesplayed
-				if tiertf == True:
-					if latestseason in seasons:
-						pagemmr = requests.get("%(webpathmmr)s/%(platform)s/%(gamertag)s" % locals())
-						if pagemmr.status_code == 200:
-							soupmmr = BeautifulSoup(pagemmr.content, features="lxml")
-							try:
-								scripttags = soupmmr.findAll('script', type='text/javascript') #grab all <script> tags
-							except:
-								logger.error("Finding <script> tags in website:%(webpathmmr)s/%(platform)s/%(gamertag)s" % locals())
-							else:
-								scripttags = soupmmr.findAll('script', type='text/javascript') #grab all <script> tags
-								for script in scripttags: #find the data we care about
-									if 'var data' in script.text:
-										a = script.text.replace(' ','').replace('\n','').replace('\r','').split(';') 
-										data = {}
-										for blob in a[1:6]:
-											b = re.split('\w+.:',blob)
-											if 'Un-Ranked' in b[1]:
-												playlist = 'Un-Ranked'
-											elif 'RankedDuel1v1' in b[1]:
-												playlist = 'Ranked Duel 1v1'
-											elif 'RankedDoubles2v2' in b[1]:
-												playlist = 'Ranked Doubles 2v2'
-											elif 'RankedSoloStandard3v3' in b[1]:
-												playlist = 'Ranked Solo Standard 3v3'
-											elif 'RankedStandard3v3' in b[1]:
-												playlist = 'Ranked Standard 3v3'
-											else:
-												playlist = ''
-											try:
-												playerdata[gamertag][latestseason][playlist]
-											except:
-												playerdata[gamertag][latestseason][playlist] = {}
-											else:
-												if '[]' in b[2]:
-													playerdata[gamertag][latestseason][playlist]['Tier'] = None
-												else:
-													#dates = list(filter(None, re.split('\[|,|\]|\'',b[2]))) #futureproof
-													#rating_over_time' = list(filter(None, re.split('\[|,|\]',b[3]))) #futureproof
-													tier_over_time = list(filter(None, re.split('\[|,|\]|\}',b[4])))
-													if tier_over_time is not None:
-														playerdata[gamertag][latestseason][playlist]['Tier'] = tier_over_time[-1]
-													else:
-														playerdata[gamertag][latestseason][playlist]['Tier'] = None
+				try:
+					html_table = soup.find('table', class_='trn-table')
+					trs = html_table.findAll('tr')
+				except(AttributeError):
+					logger.error("Could not find required data table for gamertag: %(gamertag)s at url: %(playerwebpath)s" % locals())
+				else:
+					for tr in trs[1:]: #parse the <tr> within the <table> with the data
+						playlist = tr.find('td', class_='name').find('div', class_='playlist').text.strip()
+						mmr = tr.find('td', class_='rating').find('div', class_='value').text.strip()
+						gp = tr.find('td', class_='matches').find('div', class_='value').text.strip()
+						rank = tr.find('td', class_='name').find('div', class_='rank').text.strip()
+						playerdata[gamertag][playlist] = {}
+						playerdata[gamertag][playlist]['MMR'] = mmr
+						playerdata[gamertag][playlist]['Games Played'] = gp
+						playerdata[gamertag][playlist]['Rank'] = rank
 		if '{}' in playerdata[gamertag]: #condition to alert if gamertag retrieval was blank
 			logger.debug("Gamertag: %(gamertag)s had no data to retrieve" % locals())
 		logger.debug("Data retrieval complete for gamertag: %(gamertag)s" % locals()) # a simple measure to make sure we catch every player when a list is ran
+		#sys.exit(Page.exec_())
 		return playerdata
 
 	def _testSeason(self,season):
@@ -143,7 +138,7 @@ def singleRun(gamertag,platform,seasons):
 	'''Single run of Webscrape.retrieveDataRLTracker'''
 	logger.info("Start for gamertag:%(gamertag)s"% locals())
 	scrape = Webscrape()
-	data = scrape.retrieveDataRLTracker(gamertag=gamertag,platform=platform,seasons=seasons,tiertf=True)
+	data = scrape.retrieveDataRLTracker(gamertag=gamertag,platform=platform,seasons=seasons)
 	if data is not None:
 		pprint(data)
 		logger.info("Finish for gamertag:%(gamertag)s"% locals())
@@ -154,8 +149,8 @@ if __name__ == "__main__":
 	from pprint import pprint # pprint is cool
 	#Pass arguments for name and platform
 	parser = argparse.ArgumentParser(description='Scrape Commandline Options', add_help=True)
-	parser.add_argument('-p', action='store', dest='platform', help='platform options. Example: steam', choices=('steam','ps4','xbox'), default='steam')
-	parser.add_argument('-g', action='store', dest='gamertag', help='your gamertag', default='memlo')
+	parser.add_argument('-p', action='store', dest='platform', help='platform options. Example: steam', choices=('steam','psn','xbl'), default='steam')
+	parser.add_argument('-g', action='store', dest='gamertag', help='your gamertag', default='76561198049122040')
 	parser.add_argument('-s', action='store', dest='seasons', help='retrieve for season(s) defined. Example: 8 9 11', nargs='+', default=['14']) #need a better way to update this, perhaps dynamically?
 	
 	results = parser.parse_args()

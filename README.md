@@ -11,6 +11,7 @@ Please check [requirements.txt](requirements.txt)
 ```
 pip install -r requirements.txt 
 ```
+Due to Javascript requirement, be sure to download in add to `PATH` the [Chrome Webdriver](https://sites.google.com/a/chromium.org/chromedriver/downloads) which is required per Selenium [documentation](https://pypi.org/project/selenium/)
 
 Json dict creation; Example:
 ```

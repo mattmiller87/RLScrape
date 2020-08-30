@@ -13,7 +13,7 @@ from setup_logging import logger
 from rlscrape import Webscrape
 
 readibletime =  datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") # used for csvWrite
-sem = asyncio.Semaphore(50) # control how many urls are being retrieved at a time
+sem = asyncio.Semaphore(9) # control how many urls are being retrieved at a time
 
 class csvIO:
 	''' I/O for CSV
@@ -42,6 +42,8 @@ class csvIO:
 					self.header[-2] = "Name"
 					self.header[-1] = "Link"
 				name,link = row[-2:] # select last two items
+				if "overview" in link:
+					link = link.replace("/overview","")
 				try:
 					gamertag = link.split('/')[-1] # last item in link is gamertag
 					platform = link.split('/')[-2] # item before gamertag is platform
@@ -54,9 +56,9 @@ class csvIO:
 						if len(row) - a > 2:
 							playerdict[i][gamertag][a] = item
 							a += 1
-					if "ps4" or "ps" in platform:
+					if "ps4" == platform or "ps" == platform:
 						platform = "psn"
-					elif "xbox" in platform:
+					if "xbox" == platform:
 						platform = "xbl"
 					playerdict[i][gamertag]['platform'] = platform
 					playerdict[i][gamertag]['name'] = name

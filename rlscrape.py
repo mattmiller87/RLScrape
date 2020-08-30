@@ -7,57 +7,14 @@ import re
 import os
 import sys
 from setup_logging import logger
-'''
-from PyQt5.QtWebEngineWidgets import QWebEnginePage
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import QUrl
-'''
-from PyQt5 import QtCore, QtWidgets, QtWebEngineWidgets
-from contextlib import contextmanager
-from multiprocessing import Pool
 
-def _render(url):
-    class WebPage(QtWebEngineWidgets.QWebEnginePage):
-        def __init__(self):
-            super(WebPage, self).__init__()
-            self.loadFinished.connect(self.handleLoadFinished)
-            self.html = None
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+import pandas as pd
+from tabulate import tabulate
 
-        def start(self, url):
-            self._url = url
-            self.load(QtCore.QUrl(url))
-            while self.html is None:
-                QtWidgets.qApp.processEvents(
-                QtCore.QEventLoop.ExcludeUserInputEvents |
-                QtCore.QEventLoop.ExcludeSocketNotifiers |
-                QtCore.QEventLoop.WaitForMoreEvents)
-            QtWidgets.qApp.quit()
 
-        def processCurrentPage(self, data):
-            url = self.url().toString()
-            self.html = data
 
-        def handleLoadFinished(self):
-            self.toHtml(self.processCurrentPage)
-
-'''
-class Page(QWebEnginePage):
-    def __init__(self, url):
-        self.app = QApplication(sys.argv)
-        QWebEnginePage.__init__(self)
-        self.html = ''
-        self.loadFinished.connect(self._on_load_finished)
-        self.load(QUrl(url))
-        self.app.exec_()
-
-    def _on_load_finished(self):
-        self.html = self.toHtml(self.Callable)
-        self.content = '200'
-
-    def Callable(self, html_str):
-        self.html = html_str
-        self.app.quit()
-'''
 class Webscrape():
 	''' Define the details behind the webpage
 	'''
@@ -84,32 +41,47 @@ class Webscrape():
 		playerdata[gamertag] = {} # define the gamertag dict
 		if '[]' in seasons:
 			logger.critical("Season was not set - you should never see this error")
-		#page = Page(playerwebpath)
-		app = QtWidgets.QApplication(sys.argv)
-		page = _render(playerwebpath)
-		if page:
-		#if page.content == '200':
-			#soup = BeautifulSoup(page.html, 'html.parser')
-			soup = BeautifulSoup(page, 'html.parser')
-
-			if soup.find('div', class_='error-message'):
-				logger.error(soup.find('div', class_='error-message').text)
-			else:
-				try:
-					html_table = soup.find('table', class_='trn-table')
-					trs = html_table.findAll('tr')
-				except(AttributeError):
-					logger.error("Could not find required data table for gamertag: %(gamertag)s at url: %(playerwebpath)s" % locals())
+		# create a new Chrome session
+		# skip the SSL errors
+		# log the errors instead of printing them
+		options = webdriver.ChromeOptions()
+		options.add_argument('--ignore-certificate-errors-spki-list') # ('--ignore-certificate-errors')
+		options.add_experimental_option('excludeSwitches', ['enable-logging'])
+		options.add_argument('--ignore-ssl-errors')
+		driver = webdriver.Chrome(chrome_options=options)
+		driver.implicitly_wait(30)
+		driver.get(playerwebpath) # pass player URL into Chrome window
+		for season in seasons:
+			if self._testSeason(season):
+				playerdata[gamertag][season] = {} #define the season dict
+				soup = BeautifulSoup(driver.page_source, 'lxml')
+				# we should no longer need the chrome window open, so close it now
+				# this should reduce memory requirements... hopefully
+				driver.close()
+				#soup = BeautifulSoup(page.html, 'html.parser')
+				if soup.find('div', class_='error-message'):
+					logger.error(soup.find('div', class_='error-message').text)
 				else:
-					for tr in trs[1:]: #parse the <tr> within the <table> with the data
-						playlist = tr.find('td', class_='name').find('div', class_='playlist').text.strip()
-						mmr = tr.find('td', class_='rating').find('div', class_='value').text.strip()
-						gp = tr.find('td', class_='matches').find('div', class_='value').text.strip()
-						rank = tr.find('td', class_='name').find('div', class_='rank').text.strip()
-						playerdata[gamertag][playlist] = {}
-						playerdata[gamertag][playlist]['MMR'] = mmr
-						playerdata[gamertag][playlist]['Games Played'] = gp
-						playerdata[gamertag][playlist]['Rank'] = rank
+					try:
+						html_table = soup.find('table', class_='trn-table')
+						trs = html_table.findAll('tr')
+					except(AttributeError):
+						logger.error("Could not find required data table for gamertag: %(gamertag)s at url: %(playerwebpath)s" % locals())
+					else:
+						for tr in trs[1:]: #parse the <tr> within the <table> with the data
+							playlist = tr.find('td', class_='name').find('div', class_='playlist').text.strip()
+							mmr = tr.find('td', class_='rating').find('div', class_='value').text.strip()
+							gp = tr.find('td', class_='matches').find('div', class_='value').text.strip()
+							rank = tr.find('td', class_='name').find('div', class_='rank').text.strip()
+							# cleanup comma separated values so they're displayed as int, not strings
+							if "," in mmr:
+								mmr = int(mmr.replace(',' , ''))
+							if "," in gp:
+								gp = int(gp.replace(',' , ''))
+							playerdata[gamertag][season][playlist] = {}
+							playerdata[gamertag][season][playlist]['MMR'] = mmr
+							playerdata[gamertag][season][playlist]['Games Played'] = gp
+							playerdata[gamertag][season][playlist]['Rank'] = rank
 		if '{}' in playerdata[gamertag]: #condition to alert if gamertag retrieval was blank
 			logger.debug("Gamertag: %(gamertag)s had no data to retrieve" % locals())
 		logger.debug("Data retrieval complete for gamertag: %(gamertag)s" % locals()) # a simple measure to make sure we catch every player when a list is ran

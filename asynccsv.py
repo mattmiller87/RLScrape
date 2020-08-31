@@ -10,30 +10,26 @@ from tqdm import tqdm as pbar
 import asyncio
 from aioify import aioify
 from setup_logging import logger
-from rlscrape import Webscrape
+from rlscrape import APIget
 
 readibletime =  datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") # used for csvWrite
 sem = asyncio.Semaphore(50) # control how many urls are being retrieved at a time
 
 class csvIO:
-	'''I/O for CSV'''
+	''' I/O for CSV
+	'''
 	def __init__(self):
 		checkFolders()
 		self.csvinput = results.input
 		self.csvoutput = results.output
 		self.seasons = results.seasons
 		self.playlists = results.playlists
-		self.latestseason = '14' #need a better way to update this, perhaps dynamically?
+		self.latestseason = '14' # need a better way to update this, perhaps dynamically?
 		self.header = []
-		tierchoices = ['1T','2T','3ST','3T','All']
-		tiermatch = [item for item in tierchoices if item in self.playlists]
-		if len(tiermatch) > 0:
-			self.tiertf = True
-		else:
-			self.tiertf = False
 
 	def areadCSVLinks(self):
-		'''read input CSV file. File MUST be structured either: preferred = *kwargs,Name,Link || optional = *kwargs,Link'''
+		''' Read input CSV file. File MUST be structured either: preferred = *kwargs,Name,Link || optional = *kwargs,Link
+		'''
 		seasons = self.seasons
 		with open(self.csvinput, 'r', newline='', encoding='latin-1') as csvread:
 			reader = csv.reader(csvread)
@@ -46,6 +42,8 @@ class csvIO:
 					self.header[-2] = "Name"
 					self.header[-1] = "Link"
 				name,link = row[-2:] # select last two items
+				if "overview" in link:
+					link = link.replace("/overview","")
 				try:
 					gamertag = link.split('/')[-1] # last item in link is gamertag
 					platform = link.split('/')[-2] # item before gamertag is platform
@@ -58,6 +56,10 @@ class csvIO:
 						if len(row) - a > 2:
 							playerdict[i][gamertag][a] = item
 							a += 1
+					if "ps4" == platform or "ps" == platform:
+						platform = "psn"
+					if "xbox" == platform:
+						platform = "xbl"
 					playerdict[i][gamertag]['platform'] = platform
 					playerdict[i][gamertag]['name'] = name
 					playerdict[i][gamertag]['link'] = link
@@ -68,11 +70,11 @@ class csvIO:
 		platform = gamerdict['platform']
 		name = gamerdict['name']
 		link = gamerdict['link']
-		scrape = Webscrape()
+		scrape = APIget()
 		seasons = self.seasons
 		newrow = []
-		aioretireve = aioify(obj=scrape.retrieveDataRLTracker, name='aioretireve')
-		data = await aioretireve(gamertag=gamertag,platform=platform,seasons=seasons,tiertf=self.tiertf)
+		aioretrieve = aioify(obj=scrape.pull, name='aioretrieve')
+		data = await aioretrieve(gamertag=gamertag,platform=platform,seasons=seasons)
 		newrow = self._dictToList(data)
 		a = 0
 		for k,v in gamerdict.items(): # handle kwargs
@@ -84,13 +86,14 @@ class csvIO:
 		return newrow
 
 	def awriteCSV(self,newrows):
-		'''write list of data to outputCSV file'''
+		''' Write list of data to outputCSV file
+		'''
 		for season in self.seasons:
 			header_dict = {
-				'1': "S%s_1s_MMR" % (season), '1GP': "S%s_1s_GamesPlayed" % (season), '1T': "S%s_1s_Tier" % (season),
-				'2': "S%s_2s_MMR" % (season), '2GP': "S%s_2s_GamesPlayed" % (season), '2T': "S%s_2s_Tier" % (season),
-				'3S': "S%s_Solo_3s_MMR" % (season), '3SGP': "S%s_Solo_3s_GamesPlayed" % (season), '3ST': "S%s_Solo3s_Tier" % (season),
-				'3': "S%s_3s_MMR" % (season), '3GP': "S%s_3s_GamesPlayed" % (season), '3T': "S%s_3s_Tier" % (season),
+				'1': "S%s_1s_MMR" % (season), '1GP': "S%s_1s_GamesPlayed" % (season),
+				'2': "S%s_2s_MMR" % (season), '2GP': "S%s_2s_GamesPlayed" % (season),
+				'3S': "S%s_Solo_3s_MMR" % (season), '3SGP': "S%s_Solo_3s_GamesPlayed" % (season),
+				'3': "S%s_3s_MMR" % (season), '3GP': "S%s_3s_GamesPlayed" % (season),
 			}
 			if "All" in self.playlists:
 				self.header.extend(header_dict[k] for k in header_dict)
@@ -107,37 +110,28 @@ class csvIO:
 		'''Take json formatted dictionary of playerdata and create a list which is better formatted for csv
 		this is specifically designed for RSC'''
 		latestseason = self.latestseason
-		tiertf = self.tiertf
 		newdict = {}
 		for gamertag,gdata in dictdata.items():
 			for season,sdata in gdata.items():
 				newdict[season] = {
-					'1': None,  '1GP': None, '1T' : None,
-					'2': None, '2GP': None,  '2T' : None,
-					'3S': None, '3SGP': None, '3ST' : None, 
-					'3': None, '3GP': None, '3T' : None
+					'1': None,  '1GP': None,
+					'2': None, '2GP': None,
+					'3S': None, '3SGP': None,
+					'3': None, '3GP': None,
 				}
 				for playlist,pdata in sdata.items():
 					if playlist in 'Ranked Duel 1v1' and pdata is not None and pdata.items():
 						newdict[season]['1'] = pdata['MMR']
 						newdict[season]['1GP'] = pdata['Games Played']
-						if (int(latestseason) == int(season)) and tiertf:
-							newdict[season]['1T'] = pdata['Tier']
 					if playlist in 'Ranked Doubles 2v2' and pdata is not None and pdata.items():
 						newdict[season]['2'] = pdata['MMR']
 						newdict[season]['2GP'] = pdata['Games Played']
-						if (int(latestseason) == int(season)) and tiertf:
-							newdict[season]['2T'] = pdata['Tier']
 					if playlist in 'Ranked Solo Standard 3v3' and pdata is not None and pdata.items():
 						newdict[season]['3S'] = pdata['MMR']
 						newdict[season]['3SGP'] = pdata['Games Played']
-						if (int(latestseason) == int(season)) and tiertf:
-							newdict[season]['3ST'] = pdata['Tier']
 					if playlist in 'Ranked Standard 3v3' and pdata is not None and pdata.items():
 						newdict[season]['3'] = pdata['MMR']
 						newdict[season]['3GP'] = pdata['Games Played']
-						if (int(latestseason) == int(season)) and tiertf:
-							newdict[season]['3T'] = pdata['Tier']
 		newlist = []
 		for season in self.seasons:
 			for dictseason,v in newdict.items():
@@ -157,7 +151,7 @@ def checkFolders():
 		logger.info("Creating Scrapes folder...")
 		os.makedirs("Scrapes")
 	
-async def singleRun():
+async def _singleRun():
 	logger.info("Start for csv input:%s" % (results.input))
 	inputoutput = csvIO() # initialize class
 	datadict = inputoutput.areadCSVLinks() # read the csv file
@@ -173,14 +167,14 @@ async def singleRun():
 	logger.info("Finish for csv output:%s" % (results.output))
 
 if __name__ == "__main__":
-	'''Run locally to this script'''
-	#Use comandline arguments for input
-	#edit the default parameter to change options manually without commandline options
+	''' Run locally to this script'''
+	# Use comandline arguments for input
+	# edit the default parameter to change options manually without commandline options
 	parser = argparse.ArgumentParser(description='Scrape Commandline Options', add_help=True)
 	parser.add_argument('-i', action='store', dest='input', help='Input CSV to use', default='example.csv')
 	parser.add_argument('-o', action='store', dest='output', help='Output CSV to use', default='Scrapes/%s_RLTN.csv' % (readibletime)) #RLTN = RocketLeague Tracker Network
 	parser.add_argument('-s', action='store', dest='seasons', help='retrieve for season(s) defined. Example: 8 9 11', nargs='+', default=['14']) #need a better way to update this, perhaps dynamically?
-	parser.add_argument('-p', action='store', dest='playlists', help='playlist options. Example: 1 2 3S 3', choices=("1","2","3S","3","1GP","2GP","3SGP","3GP","1T","2T","3ST","3T","All"), nargs='+', default="['1','1GP','2','2GP','3S','3SGP','3','3GP']")
+	parser.add_argument('-p', action='store', dest='playlists', help='playlist options. Example: 1 2 3S 3', choices=("1","2","3S","3","1GP","2GP","3SGP","3GP","All"), nargs='+', default="['1','1GP','2','2GP','3S','3SGP','3','3GP']")
 	
 	results = parser.parse_args()
 	#tierlegend =    {1:"Bronze I", 2:"Bronze II",3:"Bronze III",4:"Silver I",5:"Silver II",6:"Silver III",
@@ -188,5 +182,5 @@ if __name__ == "__main__":
 	#				13:"Diamond I",14:"Diamond II",15:"Diamond III",16:"Champion I",17:"Champion II",18:"Champion III",19:"Grand Champion"} #futureproof
 	
 	loop = asyncio.get_event_loop()
-	loop.run_until_complete(singleRun())
+	loop.run_until_complete(_singleRun())
 	loop.close()

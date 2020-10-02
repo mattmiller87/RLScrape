@@ -12,7 +12,7 @@ class APIget():
 	def __init__(self):
 		self.apiurl = "https://api.tracker.gg/api/v2/rocket-league/standard/profile/"
 
-	def pull(self,gamertag="memlo",platform="steam",seasons=["14"]):
+	def pull(self,gamertag="memlo",platform="steam",seasons=["15"]):
 		'''
 		data.segments
 		0 = lifetime
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Scrape Commandline Options', add_help=True)
 	parser.add_argument('-p', action='store', dest='platform', help='platform options. Example: steam', choices=('steam','psn','xbl'), default='steam')
 	parser.add_argument('-g', action='store', dest='gamertag', help='your gamertag', default='memlo')
-	parser.add_argument('-s', action='store', dest='seasons', help='retrieve for season(s) defined. Example: 8 9 11', nargs='+', default=['14']) #need a better way to update this, perhaps dynamically?
+	parser.add_argument('-s', action='store', dest='seasons', help='retrieve for season(s) defined. Example: 8 9 11', nargs='+', default=['15']) #need a better way to update this, perhaps dynamically?
 	
 	results = parser.parse_args()
 	platform = results.platform

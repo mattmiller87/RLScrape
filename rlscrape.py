@@ -41,11 +41,14 @@ class Webscrape():
                 script_data = [l for l in [str(l.parent) for l in soup.find_all('script')] if 'INITIAL_STATE' in l][0]
                 json_data = script_data.split('INITIAL_STATE__=')[1].split(";(function()")[0]
                 data = json.loads(json_data)['stats-v2']['standardProfiles']
-                trn_gamertag = list(data.keys())[0]
-                gamer_data = data[trn_gamertag]['segments']
-                for segment in gamer_data:
-                    if "playlist" in segment['type']:
-                        playerdata[gamertag][latestseason].update(self._parsePlaylist(data=segment))
+                try:
+                    trn_gamertag = list(data.keys())[0]
+                    gamer_data = data[trn_gamertag]['segments']
+                    for segment in gamer_data:
+                        if "playlist" in segment['type']:
+                            playerdata[gamertag][latestseason].update(self._parsePlaylist(data=segment))
+                except Exception as e:
+                    logger.critical("Player Data not found - URL:%(webpath)s/%(platform)s/%(gamertag)s" % locals())
         return playerdata
 
     def _parsePlaylist(self,data=None):

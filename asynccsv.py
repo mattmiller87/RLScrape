@@ -45,6 +45,8 @@ class csvIO:
                     self.header[-2] = "Name"
                     self.header[-1] = "Link"
                 name,link = row[-2:] # select last two items
+                if "overview" in link:
+                    link = link.replace("/overview","")
                 try:
                     gamertag = link.split('/')[-1] # last item in link is gamertag
                     platform = link.split('/')[-2] # item before gamertag is platform
@@ -57,6 +59,10 @@ class csvIO:
                         if len(row) - a > 2:
                             playerdict[i][gamertag][a] = item
                             a += 1
+                    if "ps4" == platform or "ps" == platform:
+                        platform = "psn"
+                    if "xbox" == platform:
+                        platform = "xbl"
                     playerdict[i][gamertag]['platform'] = platform
                     playerdict[i][gamertag]['name'] = name
                     playerdict[i][gamertag]['link'] = link

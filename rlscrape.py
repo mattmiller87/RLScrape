@@ -10,8 +10,7 @@ import json
 class Webscrape():
     '''classes are cool, no other real reason to use this - probably going to only have one function'''
     def __init__(self):
-        self.webpath = "https://rocketleague.tracker.network/profile"
-        self.webpathmmr = "https://rocketleague.tracker.network/profile/mmr"
+        self.webpath = "https://rocketleague.tracker.network/rocket-league/profile"
         self.latestseason = '16' #need a better way to update this, perhaps dynamically?
         self.rltrackermissing = "We could not find your stats,"
         self.psyonixdisabled = "Psyonix has disabled the Rocket League API"
@@ -20,7 +19,6 @@ class Webscrape():
         ''' Python BeautifulSoup4 Webscraper to https://rocketleague.tracker.network/ to retrieve gamer data
         '''
         latestseason = self.latestseason
-        webpathmmr = self.webpathmmr
         webpath = self.webpath
         rltrackermissing = self.rltrackermissing
         psyonixdisabled = self.psyonixdisabled
@@ -42,8 +40,9 @@ class Webscrape():
             else:
                 script_data = [l for l in [str(l.parent) for l in soup.find_all('script')] if 'INITIAL_STATE' in l][0]
                 json_data = script_data.split('INITIAL_STATE__=')[1].split(";(function()")[0]
-                data = json.loads(json_data)
-                gamer_data = data['stats-v2']['standardProfiles']['rocket-league|%(platform)s|%(gamertag)s' % locals()]['segments']
+                data = json.loads(json_data)['stats-v2']['standardProfiles']
+                trn_gamertag = list(data.keys())[0]
+                gamer_data = data[trn_gamertag]['segments']
                 for segment in gamer_data:
                     if "playlist" in segment['type']:
                         playerdata[gamertag][latestseason].update(self._parsePlaylist(data=segment))
@@ -69,24 +68,6 @@ class Webscrape():
             logger.info("Could not find %(playlist)s data with error: " % locals(),e)
 
         return a
-
-    def _testSeason(self,season):
-        '''True/False to see if season is valid
-        1) is a number and is a valid season less than current number'''
-        latestseason = self.latestseason
-        try:
-            if not season.isdigit():
-                raise NameError
-            if int(season) > int(latestseason):
-                raise ValueError
-        except ValueError:
-            logger.error("Season:%(season)s was higher than Current Season:%(latestseason)s" % locals())
-            return False
-        except NameError:
-            logger.error("Season:%(season)s was not a number" % locals())
-            return False
-        else:
-            return True
                     
 def singleRun(gamertag,platform):
     '''Single run of Webscrape.retrieveDataRLTracker'''

@@ -69,8 +69,8 @@ class csvIO:
         link = gamerdict['link']
         scrape = Webscrape()
         newrow = []
-        aioretireve = aioify(obj=scrape.retrieveDataRLTracker, name='aioretireve')
-        data = await aioretireve(gamertag=gamertag,platform=platform)
+        aioretrieve = aioify(obj=scrape.retrieveDataRLTracker, name='aioretrieve')
+        data = await aioretrieve(gamertag=gamertag,platform=platform)
         newrow = self._dictToList(data)
         a = 0
         for k,v in gamerdict.items(): # handle kwargs

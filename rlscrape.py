@@ -28,6 +28,11 @@ class Webscrape():
         playerdata[gamertag] = {} # define the gamertag dict
         playerdata[gamertag][latestseason] = {} # define the latestseason dict
         page = requests.get("%(webpath)s/%(platform)s/%(gamertag)s" % locals())
+        # correct platform names
+        if 'ps' or 'ps4' in platform:
+            platform = "psn"
+        if 'xbox' in platform:
+            platform = "xbl"
         if page.status_code == 200:
             soup = BeautifulSoup(page.content, features="lxml")
             if soup(text=re.compile(rltrackermissing)): # find "we could not find your stats" on webpage
@@ -98,7 +103,7 @@ if __name__ == "__main__":
     from pprint import pprint # pprint is cool
     #Pass arguments for name and platform
     parser = argparse.ArgumentParser(description='Scrape Commandline Options', add_help=True)
-    parser.add_argument('-p', action='store', dest='platform', help='platform options. Example: steam', choices=('steam','ps4','xbox'), default='steam')
+    parser.add_argument('-p', action='store', dest='platform', help='platform options. Example: steam', choices=('steam','psn','xbl'), default='steam')
     parser.add_argument('-g', action='store', dest='gamertag', help='your gamertag', default='memlo')
     ###
     # no longer can search for multiple seasons - this may be revisited at some point
